@@ -3,20 +3,18 @@ using System.Collections.Generic;
 using System.Web;
 using System.Data;
 using System.Data.SqlClient;
-
 /// <summary>
 /// Summary description for Class1
 /// </summary>
-
 public class Db_Con
 {
     public Db_Con()
-    {
-        //
-        // TODO: Add constructor logic here
-        //
-    }
-
+	{
+		//
+		// TODO: Add constructor logic here
+		//
+	}
+    
     //SqlConnection con = new SqlConnection(@"Data Source=.\SQLEXPRESS;AttachDbFilename=C:\inetpub\wwwroot\E_Chat\App_Data\e_chat.mdf;Integrated Security=True;User Instance=True");
     //Data Source=.\SQLEXPRESS;AttachDbFilename=C:\inetpub\wwwroot\E_Chat\App_Data\e_chat.mdf;Integrated Security=True;User Instance=True
     
@@ -24,11 +22,13 @@ public class Db_Con
     //SqlConnection con = new SqlConnection(@"Data Source=.\SQLEXPRESS;AttachDbFilename=C:\Users\srf\Desktop\Shijn_project_13-0519\DB\E_Chat\App_Data\e_chat.mdf;Integrated Security=True;User Instance=True");
 
     //C:\inetpub\wwwroot\E_Chat\App_Data\e_chat.mdf
-    SqlConnection con = new SqlConnection(@"Data Source=.\SQLEXPRESS;AttachDbFilename=C:\inetpub\wwwroot\E_Chat\App_Data\e_chat.mdf;Integrated Security=True;User Instance=True");
+    //SqlConnection con = new SqlConnection(@"Data Source=.\SQLEXPRESS;AttachDbFilename=C:\inetpub\wwwroot\E_Chat\App_Data\e_chat.mdf;Integrated Security=True;User Instance=True");
 
+    SqlConnection con = new SqlConnection(@"Data Source=.\SQLEXPRESS;AttachDbFilename=" + HttpContext.Current.ApplicationInstance.Server.MapPath("~/App_Data") + "\\e_chat.mdf" + ";Integrated Security=True;User Instance=True");
+    
     public void execute(SqlCommand cmd)
     {
-        cmd.Connection = con;
+        cmd.Connection=con;
         try
         {
             con.Open();
@@ -45,7 +45,6 @@ public class Db_Con
         }
 
     }
-
     public DataTable getdata(SqlCommand cmd)
     {
         cmd.Connection = con;

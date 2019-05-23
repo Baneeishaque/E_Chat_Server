@@ -11,25 +11,24 @@ using System.Diagnostics;
 using System.IO;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
-
 /// <summary>
 /// Summary description for WebService
 /// </summary>
-
 [WebService(Namespace = "http://tempuri.org/")]
 [WebServiceBinding(ConformsTo = WsiProfiles.BasicProfile1_1)]
 // To allow this Web Service to be called from script, using ASP.NET AJAX, uncomment the following line. 
 // [System.Web.Script.Services.ScriptService]
-
 public class WebService : System.Web.Services.WebService
 {
-    //public static String pathip = "http://192.168.43.162/E_Chat";
-    public static String pathip = "http://192.168.43.89/E_Chat";
+
+    //public static String pathip = "http://192.168.43.94/E_Chat";
+    public static String pathip = "http://192.168.43.89/ASP_NET/E_Chat";
 
     Db_Con db = new Db_Con();
 
     public WebService()
     {
+
         //Uncomment the following line if using designed components 
         //InitializeComponent(); 
     }
@@ -37,23 +36,31 @@ public class WebService : System.Web.Services.WebService
     [WebMethod]
     public string HelloWorld()
     {
-        return "Hello World";
+        return HttpContext.Current.ApplicationInstance.Server.MapPath("~/App_Data") + "\\e_chat.mdf";
+        //return Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        //return "Hello World";
     }
 
     [WebMethod]
     public String new_insert(String name, String phone, String photo)
     {
-        String pic = "NULL", type = "user", s = "";
+        String pic = "~/profile/user.png", type = "user", s = "";
         SqlCommand cmd = new SqlCommand();
         SqlCommand cmd2 = new SqlCommand();
+        SqlCommand cmd3 = new SqlCommand();
+        SqlCommand cmd4 = new SqlCommand();
         cmd.CommandText = "select max(user_id)from TLB_login";
         int id = db.maxid(cmd);
         cmd.CommandText = "insert into TLB_login values('" + id + "','" + name + "','" + phone + "','" + type + "')";
-        cmd2.CommandText = "insert into TLB_profile values('" + id + "','" + name + "','" + phone + "','" + photo + "')";
+        cmd2.CommandText = "insert into TLB_profile values('" + id + "','" + name + "','" + phone + "','" + pic + "')";
+        cmd3.CommandText = "insert into TLB_online values('" + id + "','" + "offline" + "')";
+        cmd4.CommandText = "insert into TLB_privacy values('" + id + "','" + "Everyone" + "','" + "OFF" + "')";
         try
         {
             db.execute(cmd);
             db.execute(cmd2);
+            db.execute(cmd3);
+            db.execute(cmd4);
             s = id.ToString();
         }
         catch
@@ -63,6 +70,7 @@ public class WebService : System.Web.Services.WebService
         return s;
     }
 
+
     [WebMethod]
     public String chat_insert(String sid, String rid, String msg_cont, String msg_ext)
     {
@@ -70,7 +78,10 @@ public class WebService : System.Web.Services.WebService
         SqlCommand cmd = new SqlCommand();
         cmd.CommandText = "select max(chat_id)from TLB_chat";
         int id = db.maxid(cmd);
-        cmd.CommandText = "insert into TLB_chat values('" + id + "','" + sid + "','" + rid + "','" + System.DateTime.Now.ToShortTimeString() + "','" + System.DateTime.Now.ToShortDateString() + "','" + msg_cont + "','" + msg_ext + "')";
+        //return id.ToString();
+        String q = "insert into TLB_chat values('" + id + "','" + sid + "','" + rid + "',getdate(),'" + msg_cont + "','" + msg_ext + "')";
+        //return q;
+        cmd.CommandText = q;
         try
         {
             db.execute(cmd);
@@ -84,10 +95,59 @@ public class WebService : System.Web.Services.WebService
     }
 
     [WebMethod]
+    public String clear(String sid, String rid)
+    {
+        String s = "", c = "", q;
+        SqlCommand cmd = new SqlCommand();
+        cmd.CommandText = "select max(clear_id)from TLB_clear";
+        int id = db.maxid(cmd);
+        c = clearcheck(sid, rid);
+        if (c == "")
+        {
+
+            //return id.ToString();
+            q = "insert into TLB_clear values('" + id + "','" + sid + "','" + rid + "',getdate())";
+            //return q;
+        }
+        else
+        {
+            q = "update TLB_clear set datetime='" + c + "' where send_id='" + sid + "'and receiver_id='" + rid + "'";
+        }
+        cmd.CommandText = q;
+        try
+        {
+            db.execute(cmd);
+            s = s + "SUCCES";
+        }
+        catch
+        {
+            s = "ERROR";
+        }
+        return s;
+    }
+
+    [WebMethod]
+    public String clearcheck(String sid, String rid)
+    {
+        String s = "";
+        SqlCommand cmd = new SqlCommand();
+        cmd.CommandText = "select datetime from TLB_clear where send_id='" + sid + "'and receiver_id='" + rid + "' ";
+        DataTable dt = db.getdata(cmd);
+        if (dt.Rows.Count > 0)
+        {
+            s = s + dt.Rows[0][0].ToString();
+        }
+
+        return s;
+    }
+
+
+    [WebMethod]
     public String user_details()
     {
         String s = "";
         SqlCommand cmd = new SqlCommand();
+
         cmd.CommandText = "select * from TLB_profile ";
         DataTable dt = db.getdata(cmd);
         if (dt.Rows.Count > 0)
@@ -99,6 +159,7 @@ public class WebService : System.Web.Services.WebService
         }
         return s;
     }
+
 
     [WebMethod]
     public String user_id(String phone)
@@ -114,6 +175,7 @@ public class WebService : System.Web.Services.WebService
         return s;
     }
 
+
     [WebMethod]
     public String match_phone(String uid)
     {
@@ -127,6 +189,7 @@ public class WebService : System.Web.Services.WebService
         }
         return s;
     }
+
 
     [WebMethod]
     public String contact_number(String phone)
@@ -154,6 +217,7 @@ public class WebService : System.Web.Services.WebService
 
     }
 
+
     [WebMethod]
     public String all_user()
     {
@@ -177,6 +241,7 @@ public class WebService : System.Web.Services.WebService
         return s;
     }
 
+
     [WebMethod]
     public String user_profile(String user_id)
     {
@@ -196,11 +261,15 @@ public class WebService : System.Web.Services.WebService
         return s;
     }
 
+
     [WebMethod]
     public String account_delete(String phone)
     {
         String s = "";
         SqlCommand cmd = new SqlCommand();
+        SqlCommand cmd2 = new SqlCommand();
+        SqlCommand cmd3 = new SqlCommand();
+        SqlCommand cmd4 = new SqlCommand();
         cmd.CommandText = "select user_id from TLB_profile where user_phone='" + phone + "'";
         DataTable dt = db.getdata(cmd);
         if (dt.Rows.Count > 0)
@@ -208,8 +277,12 @@ public class WebService : System.Web.Services.WebService
             int id = Convert.ToInt32(dt.Rows[0][0].ToString());
             cmd.CommandText = "delete from TLB_profile where user_id='" + id + "'";
             db.execute(cmd);
-            cmd.CommandText = "delete from TLB_login where user_id='" + id + "'";
-            db.execute(cmd);
+            cmd2.CommandText = "delete from TLB_login where user_id='" + id + "'";
+            cmd3.CommandText = "delete from TLB_privacy where user_id='" + id + "'";
+            cmd4.CommandText = "delete from TLB_online where user_id='" + id + "'";
+            db.execute(cmd2);
+            db.execute(cmd3);
+            db.execute(cmd4);
             s = "SUCCES";
         }
         else
@@ -219,6 +292,7 @@ public class WebService : System.Web.Services.WebService
 
         return s;
     }
+
 
     [WebMethod]
     public String account_change(String old_no, String new_no)
@@ -245,16 +319,26 @@ public class WebService : System.Web.Services.WebService
 
     }
 
+
     [WebMethod]
     public String profile_update(String user_id, String user_phone, String user_name, String user_pic)
     {
-        String s = "";
-
-        byte[] img2 = Convert.FromBase64String(user_pic);
-        Image img3 = byteArrayToImage(img2);
-        string fpath = Server.MapPath("~/profile/" + user_id + ".jpg");
-        string fnm = "~/profile/" + user_id + ".jpg";
-        img3.Save(fpath);
+        String s = "", fnm = "~/profile/" + user_id + ".jpg"; ;
+        try
+        {
+            byte[] img2 = Convert.FromBase64String(user_pic);
+            Image img3 = byteArrayToImage(img2);
+            string fpath = Server.MapPath("~/profile/" + user_id + ".jpg");
+            fnm = "~/profile/" + user_id + ".jpg";
+            img3.Save(fpath);
+        }
+        catch (Exception e)
+        {
+        }
+        finally
+        {
+            fnm = "~/profile/" + user_id + ".jpg";
+        }
 
         SqlCommand cmd = new SqlCommand();
         cmd.CommandText = "select * from TLB_profile where user_id='" + user_id + "'";
@@ -276,7 +360,11 @@ public class WebService : System.Web.Services.WebService
 
     }
 
+
+
     [WebMethod]
+
+
     public String chat_list_view(String user_id)
     {
         String s = "";
@@ -300,27 +388,53 @@ public class WebService : System.Web.Services.WebService
         }
         return s;
     }
-
     [WebMethod]
-    public String chat_select_person(String uid, String toid)
+    public String chat_select_personLastTime(String uid, string toid, String datetime)
     {
         String s = "";
         SqlCommand cmd = new SqlCommand();
-        cmd.CommandText = "select * from TLB_chat where ((send_id='" + uid + "') or (send_id='" + toid + "')) and ((receiver_id='" + toid + "') or (receiver_id='" + uid + "')) order by date desc";
+        String q = "select * from TLB_chat where ((send_id='" + uid + "') or (send_id='" + toid + "')) and ((receiver_id='" + toid + "') or (receiver_id='" + uid + "'))and datetime>'" + datetime + "'";
+        //return q;
+        cmd.CommandText = "select * from TLB_chat where ((send_id='" + uid + "') or (send_id='" + toid + "')) and ((receiver_id='" + toid + "') or (receiver_id='" + uid + "'))and datetime>'" + DateTime.Parse(datetime) + "'";
         DataTable dt = db.getdata(cmd);
         if (dt.Rows.Count > 0)
         {
             foreach (DataRow d in dt.Rows)
             {
-                s = s + d[0].ToString() + '#' + d[1].ToString() + '#' + d[2].ToString() + '#' + d[3].ToString() + '#' + d[4].ToString() + '#' + d[5].ToString() + '#' + d[6].ToString() + '@';
+                s = s + d[0].ToString() + '#' + d[1].ToString() + '#' + d[2].ToString() + '#' + d[3].ToString() + '#' + d[4].ToString() + '#' + d[5].ToString() + '#' + '@';
             }
         }
         return s;
     }
 
     [WebMethod]
+    public String chat_select_person(String uid, string toid)
+    {
+        //return uid + toid;
+        String s = "";
+        SqlCommand cmd = new SqlCommand();
+        String q = "select * from TLB_chat where ((send_id='" + uid + "') or (send_id='" + toid + "')) and ((receiver_id='" + toid + "') or (receiver_id='" + uid + "')) order by datetime asc";
+        // return q;
+        cmd.CommandText = "select * from TLB_chat where ((send_id='" + uid + "') or (send_id='" + toid + "')) and ((receiver_id='" + toid + "') or (receiver_id='" + uid + "')) order by datetime asc";
+        DataTable dt = db.getdata(cmd);
+        if (dt.Rows.Count > 0)
+        {
+            foreach (DataRow d in dt.Rows)
+            {
+                s = s + d[0].ToString() + '#' + d[1].ToString() + '#' + d[2].ToString() + '#' + d[3].ToString() + '#' + d[4].ToString() + '#' + d[5].ToString() + '@';
+            }
+        }
+        return s;
+    }
+
+
+
+
+
+    [WebMethod]
     public String profile_pic(string uid)
     {
+
         String s = "";
         SqlCommand cmd = new SqlCommand();
         cmd.CommandText = "select user_pic from TLB_profile where user_id='" + uid + "'";
@@ -331,25 +445,49 @@ public class WebService : System.Web.Services.WebService
             s = s + path;
         }
         return s;
+
     }
+
+
 
     [WebMethod]
     public String status(string toid)
     {
-        String d, t, s = "";
+        String d, s = "";
         SqlCommand cmd = new SqlCommand();
-        cmd.CommandText = "select max(date),max(time) from TLB_emotion where user_id='" + toid + "'";
+        cmd.CommandText = "select max(datetime) from TLB_emotion where user_id='" + toid + "'";
         DataTable dt1 = db.getdata(cmd);
         d = dt1.Rows[0][0].ToString();
-        t = dt1.Rows[0][1].ToString();
-        cmd.CommandText = "select e.emotion_pic,e.emotion_label,e.time_delay,p.user_name from TLB_emotion e,TLB_profile p where p.user_id=e.user_id and e.user_id='" + toid + "'and e.date='" + d + "'";
+        cmd.CommandText = "select e.emotion_pic,e.emotion_label,e.time_delay,p.user_name from TLB_emotion e,TLB_profile p where p.user_id=e.user_id and e.user_id='" + toid + "'and e.datetime='" + d + "'";
         DataTable dt = db.getdata(cmd);
         if (dt.Rows.Count > 0)
         {
+
+
             string path = pathip + dt.Rows[0][0].ToString().Trim('~');
             s = s + path + '#' + dt.Rows[0][1].ToString() + '#' + dt.Rows[0][2].ToString() + '#' + dt.Rows[0][3].ToString() + '#';
+
         }
-        s = s + d + '#' + t + '#';
+
+        return s;
+    }
+
+
+    [WebMethod]
+    public String set_online_status(String uid, String status)
+    {
+        String s = "";
+        SqlCommand cmd = new SqlCommand();
+        cmd.CommandText = "update TLB_online set status='" + status + "' where user_id='" + uid + "'";
+        try
+        {
+            db.execute(cmd);
+            s = s + "SUCCES";
+        }
+        catch
+        {
+            s = "error";
+        }
         return s;
     }
 
@@ -358,9 +496,10 @@ public class WebService : System.Web.Services.WebService
     {
         String s = "";
         SqlCommand cmd = new SqlCommand();
-        cmd.CommandText = "select max(user_id)from TLB_emotion";
+        cmd.CommandText = "select max(e_id)from TLB_emotion";
         int id = db.maxid(cmd);
-        cmd.CommandText = "insert into TLB_emotion values ('" + id + "','" + "~/Test/neutral.png" + "','" + "neutral" + "','" + System.DateTime.Now.ToShortTimeString() + "','" + System.DateTime.Now.ToShortDateString() + "','" + uid + "','" + 24 + "')";
+        cmd.CommandText = "insert into TLB_emotion values ('" + id + "','" + "~/Test/neutral.png" + "','" + "neutral" + "',getdate(),'" + uid + "','" + 24 + "')";
+
         try
         {
             db.execute(cmd);
@@ -428,10 +567,9 @@ public class WebService : System.Web.Services.WebService
         }
 
         SqlCommand cmd = new SqlCommand();
-        cmd.CommandText = "select max(date),max(time)  from TLB_emotion where user_id='" + uid + "'";
+        cmd.CommandText = "select max(datetime) from TLB_emotion where user_id='" + uid + "'";
         DataTable dt1 = db.getdata(cmd);
         d = dt1.Rows[0][0].ToString();
-        t = dt1.Rows[0][1].ToString();
 
         cmd.CommandText = "update TLB_emotion set emotion_pic='" + pic + "', emotion_label='" + lab + "' where user_id='" + uid + "'";
         try
@@ -447,6 +585,7 @@ public class WebService : System.Web.Services.WebService
         finally { File.Delete(@"C:/inetpub/wwwroot/E_Chat/emotion_pic/" + uid + ".jpg"); }
         return s;
     }
+
 
     [WebMethod]
     public String set_privacy(String uid, String privacy)
@@ -480,6 +619,39 @@ public class WebService : System.Web.Services.WebService
 
         return s;
     }
+    [WebMethod]
+    public String emotion_ON_OFF(String uid)
+    {
+        String s = "";
+        SqlCommand cmd = new SqlCommand();
+        cmd.CommandText = "select status from TLB_privacy where user_id='" + uid + "'";
+        DataTable dt = db.getdata(cmd);
+        if (dt.Rows.Count > 0)
+        {
+            s = s + dt.Rows[0][0].ToString();
+        }
+
+        return s;
+    }
+    [WebMethod]
+    public String update_emo_ON_OFF(String uid, String status)
+    {
+        String s = "";
+        SqlCommand cmd = new SqlCommand();
+        cmd.CommandText = "update TLB_privacy set status='" + status + "' where user_id='" + uid + "'";
+        try
+        {
+            db.execute(cmd);
+            s = s + "SUCCES";
+        }
+        catch
+        {
+            s = "ERROR";
+        }
+        return s;
+    }
+
+
 
     private void exealg(string nam)
     {
@@ -544,6 +716,7 @@ public class WebService : System.Web.Services.WebService
 
     }
 
+
     public void copyFiles(String s, String d)
     {
 
@@ -586,6 +759,7 @@ public class WebService : System.Web.Services.WebService
         return destImage;
     }
 
+
     public Image byteArrayToImage(byte[] byteArrayIn)
     {
 
@@ -594,4 +768,16 @@ public class WebService : System.Web.Services.WebService
         Bitmap bmp = (Bitmap)returnImage;
         return returnImage;
     }
+
+
+
+
+
+
+
+
+
+
+
+
 }
