@@ -22,7 +22,8 @@ public class WebService : System.Web.Services.WebService
 {
 
     //public static String pathip = "http://192.168.43.94/E_Chat";
-    public static String pathip = "http://192.168.43.89/ASP_NET/E_Chat";
+    //public static String pathip = "http://192.168.43.89/ASP_NET/E_Chat";
+    public static String pathip = "http://192.168.43.89/E_Chat";
 
     Db_Con db = new Db_Con();
 
